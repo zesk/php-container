@@ -8,7 +8,7 @@
 #
 # Copyright &copy; 2025 Market Acumen, Inc.
 #
-# Debugging: da39a3ee5e6b4b0d3255bfef95601890afd80709
+# Debugging: 73b0bd4ba49583263542da725669003fc821eb63
 
 # URL of latest release
 __installBinBuildLatest() {
@@ -703,7 +703,7 @@ _urlFetch() {
 # Example:     __help "$usage" "$@" || return 0
 # Example:     [ $# -eq 0 ] || __help --only "_${FUNCNAME[0]}" "$@" || return 0
 # Example:     [ $# -eq 0 ] || __help --only "$usage" "$@" || return 0
-# Depends: __throwArgument
+# Requires: __throwArgument
 __help() {
   local usage="${1-}" && shift
   if [ "$usage" = "--only" ]; then

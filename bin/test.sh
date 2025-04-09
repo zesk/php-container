@@ -7,6 +7,8 @@
 # Copyright &copy; 2025 Market Acumen, Inc.
 #
 
+source "${BASH_SOURCE[0]%/*}/tools.sh" || exit 99
+
 #
 # Standard test layout
 #
@@ -35,7 +37,5 @@ __buildTestSuite() {
 ___buildTestSuite() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
 }
-
-source "${BASH_SOURCE[0]%/*}/tools.sh" || exit 99
 
 __buildTestSuite "$@"
