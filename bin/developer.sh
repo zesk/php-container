@@ -10,7 +10,10 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
     local home
 
     if home=$(__environment buildHome); then
-      [ ! -d "$home/vendor/zesk/zesk/bin/tools/" ] || __environment bashSourcePath "$home/vendor/zesk/zesk/bin/tools/gits" || :
+      local zeskTools
+
+      zeskTools="$home/vendor/zesk/zesk/bin/tools/"
+      [ ! -d "$zeskTools" ] || __environment bashSourcePath "$zeskTools" || :
     fi
 
     developerAnnounce < <(__applicationToolsList)

@@ -13,6 +13,7 @@ use zesk\ApplicationLoader;
 
 $version = json_decode(__DIR__ . "/composer.json")['version'] ?? 'no composer.json';
 return ApplicationLoader::application([
+		Application::OPTION_APPLICATION_CLASS   => Application::class,
 		Application::OPTION_PATH                => __DIR__,
 		Application::OPTION_VERSION             => $version,
 		Application::OPTION_DEVELOPMENT         => $_SERVER['DEVELOPMENT'] ?? true,

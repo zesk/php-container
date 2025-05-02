@@ -32,7 +32,7 @@ __phpExtensionDependency() {
       printf -- "%s\n" "libcurl4"
       ;;
     # Built-in
-    json | readline)
+    json | readline | ftp)
       return 1
       ;;
     intl)
