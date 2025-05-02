@@ -7,15 +7,7 @@
 
 if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
   __phpContainerContextInitialize() {
-    local home
-
-    if home=$(__environment buildHome); then
-      local zeskTools
-
-      zeskTools="$home/vendor/zesk/zesk/bin/tools/"
-      [ ! -d "$zeskTools" ] || __environment bashSourcePath "$zeskTools" || :
-    fi
-
+    reloadChanges --name "$(buildEnvironmentGet APPLICATION_NAME)" "bin/tools.sh" "bin/tools/"
     developerAnnounce < <(__applicationToolsList)
   }
 

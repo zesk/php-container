@@ -25,35 +25,40 @@ __installDevelopment() {
 # Incomplete but add extensions as needed
 __phpExtensionDependency() {
   case "$1" in
-    curl)
-      if php -i | grep -q "with-curl"; then
-        return 1
-      fi
-      printf -- "%s\n" "libcurl4"
-      ;;
-    # Built-in
-    json | readline | ftp)
+  curl)
+    if php -i | grep -q "with-curl"; then
       return 1
-      ;;
-    intl)
-      printf -- "%s\n" "libicu-dev"
-      ;;
-    zip)
-      printf -- "%s\n" "libzip-dev"
-      ;;
-    mysqli)
-      printf -- "%s\n" "mariadb-client"
-      ;;
+    fi
+    printf -- "%s\n" "libcurl4"
+    ;;
+  # Built-in
+  json | readline | ftp)
+    return 1
+    ;;
+  intl)
+    printf -- "%s\n" "libicu-dev"
+    ;;
+  zip)
+    printf -- "%s\n" "libzip-dev"
+    ;;
+  mysqli)
+    printf -- "%s\n" "mariadb-client"
+    ;;
   esac
 }
 
-# As of April 2025
+# List of all PHP valid extensions as of April 2025 (Debian)
 __phpExtensionsList() {
-  printf "%s\n" bcmath bz2 calendar ctype curl dba dl_test dom enchant exif ffi fileinfo filter ftp gd gettext gmp hash iconv imap intl json ldap mbstring mysqli oci8 odbc opcache pcntl pdo pdo_dblib pdo_firebird pdo_mysql pdo_oci pdo_odbc pdo_pgsql pdo_sqlite pgsql phar posix pspell readline reflection session shmop simplexml snmp soap sockets sodium spl standard sysvmsg sysvsem sysvshm tidy tokenizer xml xmlreader xmlwriter xsl zend_test zip
+  printf "%s\n" bcmath bz2 calendar ctype curl dba dl_test dom enchant exif \
+    ffi fileinfo filter ftp gd gettext gmp hash iconv imap intl json ldap mbstring mysqli \
+    oci8 odbc opcache pcntl pdo pdo_dblib pdo_firebird pdo_mysql pdo_oci pdo_odbc pdo_pgsql pdo_sqlite pgsql phar posix pspell \
+    readline reflection session shmop simplexml snmp soap sockets sodium spl standard sysvmsg sysvsem sysvshm tidy tokenizer \
+    xml xmlreader xmlwriter xsl zend_test zip
 }
 
+# Does an extension exist?
 __phpExtensionExists() {
-  grep -q -e "^${1}\$" < <(__phpExtensionsList)
+  grep -q -e "^$(quoteGrepPattern "${1}")\$" < <(__phpExtensionsList)
 }
 
 #
@@ -118,7 +123,7 @@ __installPHP() {
 # Argument: --keep directory - Flag. Do not delete any files in this path.
 __mapFiles() {
   local usage="_return"
-  local directory="" deleteArgs=()
+  local directories=() directory="" deleteArgs=()
 
   # _IDENTICAL_ argument-case-header 5
   local __saved=("$@") __count=$#
@@ -126,46 +131,43 @@ __mapFiles() {
     local argument="$1" __index=$((__count - $# + 1))
     [ -n "$argument" ] || __throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
     case "$argument" in
-      # _IDENTICAL_ --help 4
-      --help)
-        "$usage" 0
-        return $?
-        ;;
-      --keep)
-        shift
-        local keep
-        keep=$(usageArgumentDirectory "$usage" "directory" "${1-}") || return $?
-        deleteArgs+=(! -path "${keep%/}")
-        ;;
-      *)
-        if [ -z "$directory" ]; then
-          directory=$(usageArgumentDirectory "$usage" "directory" "${1-}") || return $?
-          # BUG with usageArgumentDirectory
-          [ -n "$directory" ] || directory="/"
-        else
-          # _IDENTICAL_ argumentUnknown 1
-          __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
-        fi
-        ;;
+    # _IDENTICAL_ --help 4
+    --help)
+      "$usage" 0
+      return $?
+      ;;
+    --keep)
+      shift
+      local keep
+      keep=$(usageArgumentDirectory "$usage" "directory" "${1-}") || return $?
+      deleteArgs+=(! -path "${keep%/}")
+      ;;
+    *)
+      directory=$(usageArgumentDirectory "$usage" "directory" "${1-}") || return $?
+      directories+=("$directory")
+      ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
   done
 
-  [ -n "$directory" ] || __throwArgument "$usage" "No directory supplied" || return $?
+  [ "${#directories[@]}" -gt 0 ] || __throwArgument "$usage" "No directory supplied" || return $?
 
-  local fileName fileCount=0 start
-  start=$(startTiming)
+  local fileCount=0 start
   __catchEnvironment "$usage" environmentFileLoad "/etc/application.conf" || return $?
-  while read -r fileName; do
-    newFileName=$(basename "$fileName")
-    newFileName="${newFileName#MAP.}"
-    statusMessage decorate info "Mapping $(decorate subtle "$fileName") -> $(decorate green "$newFileName")"
-    newFileName="$(dirname "$fileName")/$newFileName"
-    __catchEnvironment "$usage" mapEnvironment <"$fileName" >"${newFileName}" || return $?
-    fileCount=$((fileCount + 1))
-  done < <(find "$directory" -type f -name 'MAP.*')
-  find "$directory" -type f -name 'MAP.*' "${deleteArgs[@]+"${deleteArgs[@]}"}" -exec rm "{}" \; || :
+  start=$(startTiming)
+  for directory in "${directories[@]}"; do
+    local fileName
+    while read -r fileName; do
+      newFileName=$(basename "$fileName")
+      newFileName="${newFileName#MAP.}"
+      statusMessage decorate info "Mapping $(decorate subtle "$fileName") -> $(decorate green "$newFileName")"
+      newFileName="$(dirname "$fileName")/$newFileName"
+      __catchEnvironment "$usage" mapEnvironment <"$fileName" >"${newFileName}" || return $?
+      fileCount=$((fileCount + 1))
+    done < <(find "$directory" -type f -name 'MAP.*')
+    find "$directory" -type f -name 'MAP.*' "${deleteArgs[@]+"${deleteArgs[@]}"}" -exec rm "{}" \; || :
+  done
   statusMessage --last timingReport "$start" "Mapped $fileCount $(plural "$fileCount" file files) in"
 }
 
@@ -205,11 +207,11 @@ __productionValues() {
 # Argument: databaseSchema - String. Required.
 __portFromScheme() {
   case "${1-}" in
-    mysql*) printf "%d\n" 3306 ;;
-    postgres*) printf "%d\n" 5432 ;;
-    *)
-      __throwArgument "$usage" "Unknown database scheme: \"$1\"" || return $?
-      ;;
+  mysql*) printf "%d\n" 3306 ;;
+  postgres*) printf "%d\n" 5432 ;;
+  *)
+    __throwArgument "$usage" "Unknown database scheme: \"$1\"" || return $?
+    ;;
   esac
 }
 
@@ -256,65 +258,80 @@ __dsnExpansions() {
   done
 }
 
-# Fetch application values
+# Fetch and output application values with an optional prefix
 __applicationValues() {
-  local usage="_return"
-  local application="$1"
+  local usage="$1" application="$2" prefix="$3" variable && shift 3 || _argument "${FUNCNAME[0]}" || return $?
 
   __catchEnvironment "$usage" muzzle pushd "$application" || return $?
 
   # Set the context - ensure tools is loaded locally
-
   # shellcheck source=/dev/null
-  source "$application/bin/tools.sh"
+  __catchEnvironment "$usage" source "$application/bin/build/tools.sh" || return $?
 
-  buildEnvironmentLoad APPLICATION_NAME
-  buildEnvironmentLoad APPLICATION_CODE
-  environmentApplicationLoad APPLICATION_NAME APPLICATION_CODE
+  __catchEnvironment "$usage" buildEnvironmentLoad APPLICATION_NAME || return $?
+  __catchEnvironment "$usage" buildEnvironmentLoad APPLICATION_CODE || return $?
+  __catchEnvironment "$usage" environmentApplicationLoad APPLICATION_NAME APPLICATION_CODE || return $?
+
   __catchEnvironment "$usage" muzzle popd || return $?
+
+  __catchEnvironment "$usage" hookRunOptional --application "$application" application-environment | decorate wrap "$prefix" || return $?
+
+  for variable in APPLICATION_NAME APPLICATION_CODE; do
+    local value="${!variable-}"
+    [ -z "$value" ] || __catchEnvironment "$usage" environmentValueWrite "$prefix$variable" "${!variable-}" || return $?
+  done
 }
 
 #
 # Install the environment file
 #
-# Argument: source - Source to load to generate application environment.
-# Argument: variables - EnvironmentName. Optional. Require these.
+# Argument: source - File. Source to load to generate application environment.
+# Argument: target - FileDirectory. Target file to place final application environment.
+# Argument: applicationHome - Directory|Empty. Optional. Application home directory to generate application values.
+# Argument: applicationPrefix - String. Optional. Prefix application variables with this.
+# Argument: variables - EnvironmentName. Optional. Require these to be defined in the build environment and then written to the file.
 __installEnvironment() {
   local usage="_return"
-  local source target application=""
+  local source target finalTarget application=""
 
   source=$(usageArgumentFile "$usage" "source" "${1-}") && shift || return $?
-  target=$(usageArgumentFileDirectory "$usage" "target" "${1-}") && shift || return $?
+
+  finalTarget=$(usageArgumentFileDirectory "$usage" "target" "${1-}") && shift || return $?
+
   application="${1-}" && shift
   [ -z "$application" ] || application=$(usageArgumentDirectory "$usage" "application" "$application") || return $?
-
-  __catchEnvironment "$usage" cp -f "$source" "$target" || return $?
+  prefix="${1-}" && shift
 
   __catchEnvironment "$usage" environmentFileLoad "$source" || return $?
 
+  target="$finalTarget.$$"
+
+  __catchEnvironment "$usage" cp -f "$source" "$target" || _clean $? "$target" || return $?
   while [ $# -gt 0 ]; do
     local name="$1"
     export "${name?}"
     local value="${!1-}"
-    [ -n "$value" ] || __throwEnvironment "$usage" "Required environment variable $(decorate code "$name") is blank" || _undo $? dumpPipe < <(declare -px) || return $?
+    [ -n "$value" ] || __throwEnvironment "$usage" "Required environment variable $(decorate code "$name") is blank" || _undo $? dumpPipe < <(declare -px) || _clean $? "$target" || return $?
     if ! environmentValueRead "$source" "$name"; then
-      __catchEnvironment "$usage" environmentValueWrite "$name" "$value" >>"$target" || return $?
+      __catchEnvironment "$usage" environmentValueWrite "$name" "$value" >>"$target" || _clean $? "$target" || return $?
     fi
     shift
   done
-  production=$(__catchEnvironment "$usage" environmentValueRead "$target" "PRODUCTION" "unset") || return $?
+  production=$(__catchEnvironment "$usage" environmentValueRead "$target" "PRODUCTION" "unset") || _clean $? "$target" || return $?
 
-  __dsnExpansions "$usage" "$target" DSN || return $?
-  __catchEnvironment "$usage" __productionValues "$production" >>"$target" || return $?
+  __dsnExpansions "$usage" "$target" DSN || _clean $? "$target" || return $?
+  __catchEnvironment "$usage" __productionValues "$production" >>"$target" || _clean $? "$target" || return $?
   if [ -d "$application" ]; then
-    __catchEnvironment "$usage" __applicationValues "$application" >>"$target" || return $?
+    __applicationValues "$usage" "$application" "$prefix" >>"$target" || _clean $? "$target" || return $?
   fi
+  __catchEnvironment "$usage" sort -u "$target" >"$finalTarget" || _clean $? "$target" || return $?
+  __catchEnvironment "$usage" rm -f "$target" || return $?
   # Sanity check I guess with Docker layers:
-  if [ -f "$target" ]; then
-    __catchEnvironment "$usage" statusMessage --last decorate success "$target exists" || return $?
+  if [ -f "$finalTarget" ]; then
+    __catchEnvironment "$usage" statusMessage --last decorate success "$finalTarget exists" || return $?
     return 0
   fi
-  __throwEnvironment "$usage" statusMessage --last decorate error "$target does NOT exist" 1>&2 || return $?
+  __throwEnvironment "$usage" statusMessage --last decorate error "$finalTarget does NOT exist" 1>&2 || return $?
 }
 
 # Install xdebug

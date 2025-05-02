@@ -8,13 +8,17 @@ FROM mariadb:10
 ENV BUILD_CODE=db
 ENV USER_HOME=/root
 
+ENV APPLICATION_HOME=/root/app
+ENV APPLICATION_PREFIX=""
 ENV INITDBPATH=/docker-entrypoint-initdb.d/
 ENV MARIADB_ROOT_PASSWORD=hard-to-guess
 ENV DATABASE_NETWORK=%
 ENV DSN="mysqli://docker:test@db/phpContainer"
 
-# IDENTICAL phpContainerDockerPrefix 13
+# IDENTICAL phpContainerDockerPrefix 15
 ENV APPLICATION_CONF=/etc/application.conf
+
+ADD . "$APPLICATION_HOME"
 
 RUN printf -- "%s\n" "$BUILD_CODE" > /etc/docker-role
 COPY etc/docker/install.sh /usr/local/sbin/install.sh
@@ -28,7 +32,7 @@ RUN /usr/local/sbin/install.sh __installDevelopment
 COPY .env /tmp/application.conf
 # -- phpContainerDockerPrefix
 
-RUN /usr/local/sbin/install.sh __installEnvironment /tmp/application.conf "$APPLICATION_CONF" "" MARIADB_ROOT_PASSWORD DSN
+RUN /usr/local/sbin/install.sh __installEnvironment /tmp/application.conf "$APPLICATION_CONF" "$APPLICATION_HOME" "$APPLICATION_PREFIX" MARIADB_ROOT_PASSWORD DSN
 
 RUN chmod 600 "$APPLICATION_CONF"
 RUN chown root:root "$APPLICATION_CONF"
@@ -54,4 +58,4 @@ COPY etc/docker/schema.sql "$INITDBPATH/MAP.schema-original.sql"
 
 COPY etc/docker/bashrc.sh "$USER_HOME/MAP..bashrc"
 
-RUN /usr/local/sbin/install.sh __mapFiles / --keep "$INITDBPATH"
+RUN /usr/local/sbin/install.sh __mapFiles "$INITDBPATH" "$USER_HOME" "/root/" --keep "$INITDBPATH" --keep "$APPLICATION_HOME"
