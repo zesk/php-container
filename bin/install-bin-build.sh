@@ -159,7 +159,7 @@ __installPackageConfiguration() {
   _installRemotePackage "$rel" "bin/build" "install-bin-build.sh" --version-function __installBinBuildVersion --url-function __installBinBuildURL --check-function __installBinBuildCheck --name "Zesk Build" "$@"
 }
 
-# IDENTICAL _installRemotePackage 334
+# IDENTICAL _installRemotePackage 385
 
 # Installs {name} in a local project directory if not installed. Also
 # will overwrite {source} with the latest version after installation.
@@ -194,17 +194,21 @@ __installPackageConfiguration() {
 # INTERNAL:
 # INTERNAL: If `checkFunction` fails, it should output any errors to `stderr` and return a non-zero exit code.
 # INTERNAL:
+# DOC TEMPLATE: --help 1
+# Argument: --help - Optional. Flag. Display this help.
 # Argument: --source source - Optional. String. Source to display for the binary name. INTERNAL.
 # Argument: --name name - Optional. String. Name to display for the remote package name. INTERNAL.
 # Argument: --local localPackageDirectory - Optional. Directory. Directory of an existing installation to mock behavior for testing. INTERNAL.
 # Argument: --url url - Optional. URL. URL of a tar.gz file. Download source code from here.
-# Argument: --user headerText - Optional. String. Add `username:password` to remote request.
+# Argument: --user username - Optional. String. Add `username:password` to remote request.
+# Argument: --password passwordText - Optional. String. Add `username:password` to remote request.
 # Argument: --header headerText - Optional. String. Add one or more headers to the remote request.
 # Argument: --version-function urlFunction - Optional. Function. Function to compare live version to local version. Exits 0 if they match. Output version text if you want. INTERNAL.
 # Argument: --url-function urlFunction - Optional. Function. Function to return the URL to download. INTERNAL.
 # Argument: --check-function checkFunction - Optional. Function. Function to check the installation and output the version number or package name. INTERNAL.
-# Argument: --installer installer - Optional. Executable. Binary to run after installation succeeds.
-# Argument: --replace fie - Optional. Flag. Replace the target file with this script and delete this one. Internal only, do not use. INTERNAL.
+# Argument: --installer installer - Optional. Executable. Multiple. Binary to run after installation succeeds. Can be supplied multiple times. If `installer` begins with a `@` then any errors by the installer are ignored.
+# Argument: --replace file - Optional. File. Replace the target file with this script and delete this one. Internal only, do not use. INTERNAL.
+# Argument: --finalize file - Optional. File. Remove the temporary file and exit 0. INTERNAL.
 # Argument: --debug - Optional. Flag. Debugging is on. INTERNAL.
 # Argument: --force - Optional. Flag. Force installation even if file is up to date.
 # Argument: --diff - Optional. Flag. Show differences between old and new file.
@@ -229,79 +233,100 @@ _installRemotePackage() {
     local argument="$1" __index=$((__count - $# + 1))
     [ -n "$argument" ] || __throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
     case "$argument" in
-      # _IDENTICAL_ --help 4
-      --help)
-        "$usage" 0
-        return $?
-        ;;
-      --source)
-        shift
-        source=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
-        ;;
-      --name)
-        shift
-        name=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
-        ;;
-      --debug)
-        __installRemotePackageDebug "$argument"
-        ;;
-      --diff)
-        installArgs+=("$argument")
-        ;;
-      --replace)
-        shift
-        newName=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
-        decorate bold-blue "Replacing $(decorate orange "${BASH_SOURCE[0]}") -> $(decorate bold-orange "$newName")"
-        __catchEnvironment "$usage" cp -f "${BASH_SOURCE[0]}" "$newName" || return $?
-        __catchEnvironment "$usage" rm -rf "${BASH_SOURCE[0]}" || return $?
-        return 0
-        ;;
-      --force)
-        forceFlag=true
-        installReason="--force specified"
-        ;;
-      --mock | --local)
-        [ -z "$localPath" ] || __throwArgument "$usage" "$argument already" || return $?
-        shift
-        [ -n "${1-}" ] || __throwArgument "$usage" "$argument blank argument #$__index" || return $?
-        localPath="$(__catchArgument "$usage" realPath "${1%/}")" || return $?
-        [ -x "$localPath/tools.sh" ] || __throwArgument "$usage" "$argument argument (\"$(decorate code "$localPath")\") must be path to bin/build containing tools.sh" || return $?
-        ;;
-      --user | --header | --password)
-        shift
-        fetchArguments+=("$argument" "$(usageArgumentString "$usage" "$argument" "${1-}")")
-        ;;
-      --url)
-        shift
-        [ -z "$url" ] || __throwArgument "$usage" "$argument already" || return $?
-        [ -n "${1-}" ] || __throwArgument "$usage" "$argument blank argument" || return $?
-        url="$1"
-        ;;
-      --version-function)
-        shift
-        [ -z "$versionFunction" ] || __throwArgument "$usage" "$argument already" || return $?
-        isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
-        versionFunction="$1"
-        ;;
-      --url-function)
-        shift
-        [ -z "$urlFunction" ] || __throwArgument "$usage" "$argument already" || return $?
-        isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
-        urlFunction="$1"
-        ;;
-      --installer)
-        shift
-        installers+=("$(usageArgumentString "$usage" "$argument" "${1-}")") || return $?
-        ;;
-      --check-function)
-        shift
-        [ -z "$checkFunction" ] || __throwArgument "$usage" "$argument already" || return $?
-        isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
-        checkFunction="$1"
-        ;;
-      *)
-        __throwArgument "$usage" "unknown argument #$__index: $argument" || return $?
-        ;;
+    # _IDENTICAL_ --help 4
+    --help)
+      "$usage" 0
+      return $?
+      ;;
+    --source)
+      shift
+      source=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      ;;
+    --name)
+      shift
+      name=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      ;;
+    --mock | --local)
+      [ -z "$localPath" ] || __throwArgument "$usage" "$argument already" || return $?
+      shift
+      [ -n "${1-}" ] || __throwArgument "$usage" "$argument blank argument #$__index" || return $?
+      localPath="$(__catchArgument "$usage" realPath "${1%/}")" || return $?
+      [ -x "$localPath/tools.sh" ] || __throwArgument "$usage" "$argument argument (\"$(decorate code "$localPath")\") must be path to bin/build containing tools.sh" || return $?
+      ;;
+    --user | --header | --password)
+      shift
+      fetchArguments+=("$argument" "$(usageArgumentString "$usage" "$argument" "${1-}")")
+      ;;
+    --url)
+      shift
+      [ -z "$url" ] || __throwArgument "$usage" "$argument already" || return $?
+      [ -n "${1-}" ] || __throwArgument "$usage" "$argument blank argument" || return $?
+      url="$1"
+      ;;
+    --version-function)
+      shift
+      [ -z "$versionFunction" ] || __throwArgument "$usage" "$argument already" || return $?
+      isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
+      versionFunction="$1"
+      ;;
+    --url-function)
+      shift
+      [ -z "$urlFunction" ] || __throwArgument "$usage" "$argument already" || return $?
+      isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
+      urlFunction="$1"
+      ;;
+    --check-function)
+      shift
+      [ -z "$checkFunction" ] || __throwArgument "$usage" "$argument already" || return $?
+      isFunction "${1-}" || __throwArgument "$usage" "$argument not callable: ${1-}" || return $?
+      checkFunction="$1"
+      ;;
+    --installer)
+      shift
+      installers+=("$(usageArgumentString "$usage" "$argument" "${1-}")") || return $?
+      ;;
+    #
+    # I believe this ensures that the process running does not modify its source script directly
+    #
+    # 1. Copy new script to bin/installer.sh.$$
+    # 2. Run exec bin/installer.sh.$$ --replace bin/installer.sh
+    # 3. Memory reloaded with "new" version of script
+    # 4. New version copies itself (.sh.$$) to old installer (.sh version), and runs
+    # 4. exec bin/installer.sh --finalize bin/installer.sh.$$
+    # 5. Loads NEW version of script, and then deletes `bin/installer.sh.$$` and exits
+    #
+    # But I could be wrong.
+    #
+    --replace)
+      local newName
+      shift
+      newName=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      decorate bold-blue "Updating -> $(decorate bold-orange "$newName")"
+      __catchEnvironment "$usage" cp -f "${BASH_SOURCE[0]}" "$newName" || return $?
+      __catchEnvironment "$usage" chmod +x "$newName" || return $?
+      exec "$newName" --finalize "${BASH_SOURCE[0]}" || return $?
+      return 0
+      ;;
+    --finalize)
+      local oldName
+      shift
+      oldName=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      __catchEnvironment "$usage" rm -rf "$oldName" || return $?
+      return 0
+      ;;
+    --debug)
+      __installRemotePackageDebug "$argument"
+      ;;
+    --force)
+      forceFlag=true
+      installReason="--force specified"
+      ;;
+    --diff)
+      installArgs+=("$argument")
+      ;;
+    *)
+      __throwArgument "$usage" "unknown argument #$__index: $argument" || return $?
+      ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
@@ -375,19 +400,52 @@ _installRemotePackage() {
   __installRemotePackageGitCheck "$applicationHome" "$packagePath" || :
   message="$message (local)$binName"
   printf -- "%s\n" "$message"
-  __installRemotePackageLocal "$installPath/$packageInstallerName" "$myBinary" "$relative"
 
-  local installer lastExit=0 exitCode=0
-  for installer in "${installers[@]+"${installers[@]}"}"; do
-    [ -f "$installer" ] || __throwEnvironment "$usage" "$installer is missing" || return $?
-    [ -x "$installer" ] || __throwEnvironment "$usage" "$installer is not executable" || return $?
-    __catchEnvironment "$usage" "$installer" 2>&1 || lastExit=$?
-    if [ $lastExit -gt 0 ]; then
-      printf -- "%s\n" "Installer $(decorate code "$installer") failed [$(decorate error "$lastExit")]"
-      exitCode=$lastExit
+  local exitCode=0
+
+  if [ "${#installers[@]}" -gt 0 ]; then
+    local installer lastExit=0 installerLog
+
+    installerLog=$(fileTemporaryName "$usage") || return $?
+
+    for installer in "${installers[@]}"; do
+      local ignoreErrors=false
+      if [ "${installer#@}" != "$installer" ]; then
+        ignoreErrors=true
+        installer="${installer#@}"
+      fi
+      if [ ! -f "$installer" ]; then
+        __throwEnvironment "$usage" "$installer is missing" || exitCode=$?
+        continue
+      fi
+      if [ ! -x "$installer" ]; then
+        __throwEnvironment "$usage" "$installer is not executable" || exitCode=$?
+        continue
+      fi
+      decorate info "Running installer $(decorate code "$installer") ($ignoreErrors) ..."
+      __catchEnvironment "$usage" "$installer" >"$installerLog" 2>&1 || lastExit=$?
+      if [ $lastExit -gt 0 ]; then
+        if $ignoreErrors; then
+          decorate warning "Installer $(decorate code "$installer") did not succeed [$(decorate value "$lastExit")]"
+          decorate code <"$installerLog"
+        else
+          decorate error "Installer $(decorate code "$installer") failed [$(decorate value "$lastExit")]" 1>&2
+          decorate code <"$installerLog" 1>&2
+          exitCode=$lastExit || :
+        fi
+        printf -- "" >"$installerLog" || :
+      fi
+    done
+
+    rm -f "$installerLog" || :
+
+    if [ "$exitCode" != 0 ]; then
+      # Exit before replacing script below
+      return "$exitCode"
     fi
-  done
-  return $exitCode
+  fi
+
+  __installRemotePackageLocal "$installPath/$packageInstallerName" "$myBinary" "$relative"
 }
 
 # Error handler for _installRemotePackage
@@ -480,19 +538,12 @@ __installRemotePackageGitCheck() {
 # Requires: _environment isUnsignedInteger cat _clean
 __installRemotePackageLocal() {
   local source="$1" myBinary="$2" relTop="$3"
-  local log="$myBinary.$$.log"
   {
     grep -v -e '^__installPackageConfiguration ' <"$source"
     printf "%s %s \"%s\"\n" "__installPackageConfiguration" "$relTop" '$@'
   } >"$myBinary.$$"
   chmod +x "$myBinary.$$" || _environment "chmod +x failed" || return $?
-  "$myBinary.$$" --replace "$myBinary" >"$log" 2>&1 &
-  local pid=$!
-  if ! isUnsignedInteger "$pid"; then
-    _environment "Unable to run $myBinary.$$" || return $?
-  fi
-  wait "$pid" || _environment "$(printf "%s\n%s\n" "install log failed: $pid" "$(cat "$log")")" || _clean $? "$log" || return $?
-  _clean 0 "$log" || return $?
+  exec "$myBinary.$$" --replace "$myBinary"
 }
 
 # IDENTICAL versionSort 51
@@ -523,18 +574,18 @@ versionSort() {
     local argument="$1" __index=$((__count - $# + 1))
     [ -n "$argument" ] || __throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
     case "$argument" in
-      # _IDENTICAL_ --help 4
-      --help)
-        "$usage" 0
-        return $?
-        ;;
-      -r | --reverse)
-        reverse="r"
-        ;;
-      *)
-        # _IDENTICAL_ argumentUnknown 1
-        __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
-        ;;
+    # _IDENTICAL_ --help 4
+    --help)
+      "$usage" 0
+      return $?
+      ;;
+    -r | --reverse)
+      reverse="r"
+      ;;
+    *)
+      # _IDENTICAL_ argumentUnknown 1
+      __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
+      ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
@@ -594,72 +645,72 @@ urlFetch() {
     local argument="$1" __index=$((__count - $# + 1))
     [ -n "$argument" ] || __throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
     case "$argument" in
-      # _IDENTICAL_ --help 4
-      --help)
-        "$usage" 0
-        return $?
-        ;;
-      --header)
+    # _IDENTICAL_ --help 4
+    --help)
+      "$usage" 0
+      return $?
+      ;;
+    --header)
+      shift
+      local name value
+      name="${1%%:}"
+      value="${1#*:}"
+      if [ "$name" = "$1" ] || [ "$value" = "$1" ]; then
+        __catchArgument "$usage" "Invalid $argument $1 passed" || return $?
+      fi
+      headers+=("$1")
+      curlArgs+=("--header" "$1")
+      wgetArgs+=("--header=$1")
+      ;;
+    --wget)
+      binary="wget"
+      ;;
+    --curl)
+      binary="curl"
+      ;;
+    --binary)
+      shift
+      binary=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      whichExists "$binary" || __throwArgument "$usage" "$binary must be in PATH: $PATH" || return $?
+      ;;
+    --argument-format)
+      format=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
+      case "$format" in curl | wget) ;; *) __throwArgument "$usage" "$argument must be curl or wget" || return $? ;; esac
+      ;;
+    --password)
+      shift
+      password="$1"
+      ;;
+    --user)
+      shift
+      user=$(usageArgumentString "$usage" "$argument (user)" "$user") || return $?
+      if [ "$user" != "${user#*:}" ]; then
+        userHasColons=true
+      fi
+      curlArgs+=(--user "$user:$password")
+      wgetArgs+=("--http-user=$user" "--http-password=$password")
+      genericArgs+=("$argument" "$1")
+      ;;
+    --agent)
+      shift
+      local agent="$1"
+      [ -n "$agent" ] || __throwArgument "$usage" "$argument must be non-blank" || return $?
+      wgetArgs+=("--user-agent=$1")
+      curlArgs+=("--user-agent" "$1")
+      genericArgs+=("$argument" "$1")
+      ;;
+    *)
+      if [ -z "$url" ]; then
+        url="$1"
+      elif [ -z "$target" ]; then
+        target="$1"
         shift
-        local name value
-        name="${1%%:}"
-        value="${1#*:}"
-        if [ "$name" = "$1" ] || [ "$value" = "$1" ]; then
-          __catchArgument "$usage" "Invalid $argument $1 passed" || return $?
-        fi
-        headers+=("$1")
-        curlArgs+=("--header" "$1")
-        wgetArgs+=("--header=$1")
-        ;;
-      --wget)
-        binary="wget"
-        ;;
-      --curl)
-        binary="curl"
-        ;;
-      --binary)
-        shift
-        binary=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
-        whichExists "$binary" || __throwArgument "$usage" "$binary must be in PATH: $PATH" || return $?
-        ;;
-      --argument-format)
-        format=$(usageArgumentString "$usage" "$argument" "${1-}") || return $?
-        case "$format" in curl | wget) ;; *) __throwArgument "$usage" "$argument must be curl or wget" || return $? ;; esac
-        ;;
-      --password)
-        shift
-        password="$1"
-        ;;
-      --user)
-        shift
-        user=$(usageArgumentString "$usage" "$argument (user)" "$user") || return $?
-        if [ "$user" != "${user#*:}" ]; then
-          userHasColons=true
-        fi
-        curlArgs+=(--user "$user:$password")
-        wgetArgs+=("--http-user=$user" "--http-password=$password")
-        genericArgs+=("$argument" "$1")
-        ;;
-      --agent)
-        shift
-        local agent="$1"
-        [ -n "$agent" ] || __throwArgument "$usage" "$argument must be non-blank" || return $?
-        wgetArgs+=("--user-agent=$1")
-        curlArgs+=("--user-agent" "$1")
-        genericArgs+=("$argument" "$1")
-        ;;
-      *)
-        if [ -z "$url" ]; then
-          url="$1"
-        elif [ -z "$target" ]; then
-          target="$1"
-          shift
-          break
-        else
-          # _IDENTICAL_ argumentUnknown 1
-          __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
-        fi
-        ;;
+        break
+      else
+        # _IDENTICAL_ argumentUnknown 1
+        __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
+      fi
+      ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
@@ -683,9 +734,9 @@ urlFetch() {
   [ -n "$binary" ] || __throwEnvironment "$usage" "wget or curl required" || return $?
   [ -n "$format" ] || format="$binary"
   case "$format" in
-    wget) __catchEnvironment "$usage" "$binary" -q --output-document="$target" --timeout=10 "${wgetArgs[@]+"${wgetArgs[@]}"}" "$url" "$@" || return $? ;;
-    curl) __catchEnvironment "$usage" "$binary" -L -s "$url" "$@" -o "$target" "${curlArgs[@]+"${curlArgs[@]}"}" || return $? ;;
-    *) __throwEnvironment "$usage" "No handler for binary format $(decorate value "$format") (binary is $(decorate code "$binary")) $(decorate each value "${genericArgs[@]}")" || return $? ;;
+  wget) __catchEnvironment "$usage" "$binary" -q --output-document="$target" --timeout=10 "${wgetArgs[@]+"${wgetArgs[@]}"}" "$url" "$@" || return $? ;;
+  curl) __catchEnvironment "$usage" "$binary" -L -s "$url" "$@" -o "$target" "${curlArgs[@]+"${curlArgs[@]}"}" || return $? ;;
+  *) __throwEnvironment "$usage" "No handler for binary format $(decorate value "$format") (binary is $(decorate code "$binary")) $(decorate each value "${genericArgs[@]}")" || return $? ;;
   esac
 }
 _urlFetch() {
@@ -732,7 +783,7 @@ usageDocument() {
   usageDocumentSimple "$@"
 }
 
-# IDENTICAL usageDocumentSimple 19
+# IDENTICAL usageDocumentSimple 20
 
 # Output a simple error message for a function
 # Argument: source - File. Required. File where documentation exists.
@@ -741,21 +792,27 @@ usageDocument() {
 # Argument: message ... - Optional. String. Message to display to the user.
 # Requires: bashFunctionComment decorate read printf exitString
 usageDocumentSimple() {
-  local source="${1-}" functionName="${2-}" exitCode="${3-}" color helpColor="info" icon="❌" line prefix="" skip=false && shift 3
+  local source="${1-}" functionName="${2-}" exitCode="${3-}" color helpColor="info" icon="❌" line prefix="" done=false skip=false && shift 3
 
   case "$exitCode" in 0) icon="🏆" && color="info" && [ $# -ne 0 ] || skip=true ;; 1) color="error" ;; 2) color="bold-red" ;; *) color="orange" ;; esac
   [ $# -eq 0 ] || [ "$exitCode" -ne 0 ]
   $skip || printf -- "%s [%s] %s\n" "$icon" "$(decorate "code" "$(exitString "$exitCode")")" "$(decorate "$color" "$*")"
-  while read -r line; do
+  while ! $done; do
+    IFS='' read -r line || done=true
     printf "%s%s\n" "$prefix" "$(decorate "$helpColor" "$line")"
     prefix=""
   done < <(bashFunctionComment "$source" "$functionName")
   return "$exitCode"
 }
 
-# IDENTICAL bashFunctionComment 18
+# IDENTICAL bashFunctionComment 23
 
-# Extract a bash comment from a file
+# Extract a bash comment from a file. Excludes lines containing the following tokens:
+#
+# - `" IDENTICAL "` or `" _IDENTICAL_ "`
+# - `"Internal:"` or `"INTERNAL:"`
+# - `"DOC TEMPLATE:"`
+#
 # Argument: source - File. Required. File where the function is defined.
 # Argument: functionName - String. Required. The name of the bash function to extract the documentation for.
 # Requires: grep cut reverseFileLines __help
@@ -764,7 +821,7 @@ bashFunctionComment() {
   local source="${1-}" functionName="${2-}"
   local maxLines=1000
   __help "_${FUNCNAME[0]}" "$@" || return 0
-  grep -m 1 -B $maxLines "^$functionName() {" "$source" | grep -v -e '( IDENTICAL | _IDENTICAL_ |DOC TEMPLATE:|Internal:)' |
+  grep -m 1 -B $maxLines "^$functionName() {" "$source" | grep -v -e '( IDENTICAL | _IDENTICAL_ |DOC TEMPLATE:|Internal:|INTERNAL:)' |
     reverseFileLines | grep -B "$maxLines" -m 1 -E '^\s*$' |
     reverseFileLines | grep -E '^#' | cut -c 3-
 }
@@ -890,7 +947,7 @@ _isFunction() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
 }
 
-# IDENTICAL decorate 207
+# IDENTICAL decorate 218
 
 # Sets the environment variable `BUILD_COLORS` if not set, uses `TERM` to calculate
 #
@@ -961,9 +1018,9 @@ decorations() {
     code info notice success warning error subtle label value decoration
 }
 _decorations() {
+  ! false || decorations --help
   # _IDENTICAL_ usageDocument 1
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
-  ! false || decorations --help
 }
 
 # Singular decoration function
@@ -971,22 +1028,24 @@ _decorations() {
 # Argument: style - String. Required. One of: reset underline no-underline bold no-bold black black-contrast blue cyan green magenta orange red white yellow bold-black bold-black-contrast bold-blue bold-cyan bold-green bold-magenta bold-orange bold-red bold-white bold-yellow code info notice success warning error subtle label value decoration
 # Argument: text - Text to output. If not supplied, outputs a code to change the style to the new style.
 # stdout: Decorated text
-# Requires: isFunction _argument awk __catchEnvironment usageDocument
+# Requires: isFunction _argument awk __catchEnvironment usageDocument __executeInputSupport
 decorate() {
   local usage="_${FUNCNAME[0]}" text="" what="${1-}" lp dp style
   shift && [ -n "$what" ] || __catchArgument "$usage" "Requires at least one argument: \"$*\"" || return $?
+
   if ! style=$(_caseStyles "$what"); then
     local extend func="${what/-/_}"
     extend="__decorateExtension$(printf "%s" "${func:0:1}" | awk '{print toupper($0)}')${func:1}"
     # When this next line calls `__catchArgument` it results in an infinite loop
     # shellcheck disable=SC2119
     isFunction "$extend" || _argument printf -- "%s\n%s\n" "Unknown decoration name: $what ($extend)" "$(decorations)" || return $?
-    __catchEnvironment "$usage" "$extend" "$@" || return $?
-    return $?
+    __executeInputSupport "$usage" "$extend" -- "$@" || return $?
+    return 0
   fi
   read -r lp dp text <<<"$style" || :
   local p='\033['
-  __decorate "$text" "${p}${lp}m" "${p}${dp:-$lp}m" "${p}0m" "$@"
+
+  __executeInputSupport "$usage" __decorate "$text" "${p}${lp}m" "${p}${dp:-$lp}m" "${p}0m" -- "$@" || return $?
 }
 _decorate() {
   # _IDENTICAL_ usageDocument 1
@@ -1001,48 +1060,48 @@ _decorate() {
 # Requires: printf
 _caseStyles() {
   case "$1" in
-    reset) lp='0' ;;
-      # styles
-    underline) lp='4' ;;
-    no-underline) lp='24' ;;
-    bold) lp='1' ;;
-    no-bold) lp='21' ;;
-      # colors
-    black) lp='109;7' ;;
-    black-contrast) lp='107;30' ;;
-    blue) lp='94' ;;
-    cyan) lp='36' ;;
-    green) lp='92' ;;
-    magenta) lp='35' ;;
-    orange) lp='33' ;;
-    red) lp='31' ;;
-    white) lp='48;5;0;37' ;;
-    yellow) lp='48;5;16;38;5;11' ;;
-      # bold-colors
-    bold-black) lp='1;109;7' ;;
-    bold-black-contrast) lp='1;107;30' ;;
-    bold-blue) lp='1;94' ;;
-    bold-cyan) lp='1;36' ;;
-    bold-green) lp='92' ;;
-    bold-magenta) lp='1;35' ;;
-    bold-orange) lp='1;33' ;;
-    bold-red) lp='1;31' ;;
-    bold-white) lp='1;48;5;0;37' ;;
-    bold-yellow) lp='1;48;5;16;38;5;11' ;;
-      # semantic-colors
-    code) lp='1;97;44' ;;
-    info) lp='38;5;20' && dp='1;33' && text="Info" ;;
-    notice) lp='46;31' && dp='1;97;44' && text="Notice" ;;
-    success) lp='42;30' && dp='0;32' && text="Success" ;;
-    warning) lp='1;93;41' && text="Warning" ;;
-    error) lp='1;91' && text="ERROR" ;;
-    subtle) lp='1;38;5;252' && dp='1;38;5;240' ;;
-    label) lp='34;103' && dp='1;96' ;;
-    value) lp='1;40;97' && dp='1;97' ;;
-    decoration) lp='45;97' && dp='45;30' ;;
-    *)
-      return 1
-      ;;
+  reset) lp='0' ;;
+    # styles
+  underline) lp='4' ;;
+  no-underline) lp='24' ;;
+  bold) lp='1' ;;
+  no-bold) lp='21' ;;
+    # colors
+  black) lp='109;7' ;;
+  black-contrast) lp='107;30' ;;
+  blue) lp='94' ;;
+  cyan) lp='36' ;;
+  green) lp='92' ;;
+  magenta) lp='35' ;;
+  orange) lp='33' ;;
+  red) lp='31' ;;
+  white) lp='48;5;0;37' ;;
+  yellow) lp='48;5;16;38;5;11' ;;
+    # bold-colors
+  bold-black) lp='1;109;7' ;;
+  bold-black-contrast) lp='1;107;30' ;;
+  bold-blue) lp='1;94' ;;
+  bold-cyan) lp='1;36' ;;
+  bold-green) lp='92' ;;
+  bold-magenta) lp='1;35' ;;
+  bold-orange) lp='1;33' ;;
+  bold-red) lp='1;31' ;;
+  bold-white) lp='1;48;5;0;37' ;;
+  bold-yellow) lp='1;48;5;16;38;5;11' ;;
+    # semantic-colors
+  code) lp='1;97;44' ;;
+  info) lp='38;5;20' && dp='1;33' && text="Info" ;;
+  notice) lp='46;31' && dp='1;97;44' && text="Notice" ;;
+  success) lp='42;30' && dp='0;32' && text="Success" ;;
+  warning) lp='1;93;41' && text="Warning" ;;
+  error) lp='1;91' && text="ERROR" ;;
+  subtle) lp='1;38;5;252' && dp='1;38;5;240' ;;
+  label) lp='34;103' && dp='1;96' ;;
+  value) lp='1;40;97' && dp='1;97' ;;
+  decoration) lp='45;97' && dp='45;30' ;;
+  *)
+    return 1
+    ;;
   esac
   printf "%s %s %s\n" "$lp" "${dp:-$lp}" "$text"
 }
@@ -1060,18 +1119,27 @@ __decorateExtensionEach() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      --index) addIndex=true ;;
-      --count) showCount=true ;;
-      --arguments) showCount=true ;;
-      *) code="$1" && shift && break ;;
+    --index) addIndex=true ;;
+    --count) showCount=true ;;
+    --arguments) showCount=true ;;
+    *) code="$1" && shift && break ;;
     esac
     shift
   done
   if [ $# -eq 0 ]; then
-    if read -t 0; then
-      while read -r item; do
+    local byte
+    if read -r -t 1 -n 1 byte; then
+      if [ "$byte" = $'\n' ]; then
+        formatted+=("$prefix$(decorate "$code" "")")
+        byte=""
+      fi
+      local done=false
+      while ! $done; do
+        IFS='' read -r item || done=true
+        [ -n "$byte$item" ] || ! $done || break
         ! $addIndex || prefix="$index:"
-        formatted+=("$prefix$(decorate "$code" "$item")")
+        formatted+=("$prefix$(decorate "$code" "$byte$item")")
+        byte=""
         index=$((index + 1))
       done
     fi
@@ -1099,6 +1167,47 @@ __decorateExtensionQuote() {
   printf -- "\"%s\"\n" "$text"
 }
 
+# _IDENTICAL_ __executeInputSupport 39
+
+# Support arguments and stdin as arguments to an executor
+# Argument: executor ... -- - The command to run on each line of input or on each additional argument. Arguments to prefix the final variable argument can be supplied prior to an initial `--`.
+# Argument: -- - Alone after the executor forces `stdin` to be ignored. The `--` flag is also removed from the arguments passed to the executor.
+# Argument: ... - Any additional arguments are passed directly to the executor
+__executeInputSupport() {
+  local usage="$1" executor=() && shift
+
+  while [ $# -gt 0 ]; do
+    if [ "$1" = "--" ]; then
+      shift
+      break
+    fi
+    executor+=("$1")
+    shift
+  done
+  [ ${#executor[@]} -gt 0 ] || return 0
+
+  local byte
+  # On Darwin `read -t 0` DOES NOT WORK as a select on stdin
+  if [ $# -eq 0 ] && IFS="" read -r -t 1 -n 1 byte; then
+    local line done=false
+    if [ "$byte" = $'\n' ]; then
+      __catchEnvironment "$usage" "${executor[@]}" "" || return $?
+      byte=""
+    fi
+    while ! $done; do
+      IFS="" read -r line || done=true
+      [ -n "$byte$line" ] || ! $done || break
+      __catchEnvironment "$usage" "${executor[@]}" "$byte$line" || return $?
+      byte=""
+    done
+  else
+    if [ "${1-}" = "--" ]; then
+      shift
+    fi
+    __catchEnvironment "$usage" "${executor[@]}" "$@" || return $?
+  fi
+}
+
 # _IDENTICAL_ _exitString 8
 
 # Output the exit code as a string
@@ -1106,7 +1215,7 @@ __decorateExtensionQuote() {
 # Argument: code ... - UnsignedInteger. String. Exit code value to output.
 # stdout: exitCodeToken, one per line
 exitString() {
-  local k="" && while [ $# -gt 0 ]; do case "$1" in 1) k="environment" ;; 2) k="argument" ;; 97) k="assert" ;; 105) k="identical" ;; 108) k="leak" ;; 116) k="timeout" ;; 120) k="exit" ;; 127) k="not-found" ;; 141) k="interrupt" ;; 253) k="internal" ;; 254) k="unknown" ;; *) k="[exitString unknown \"$1\"]" ;; esac && [ -n "$k" ] || k="$1" && printf "%s\n" "$k" && shift; done
+  local k="" && while [ $# -gt 0 ]; do case "$1" in 0) k="success" ;; 1) k="environment" ;; 2) k="argument" ;; 97) k="assert" ;; 105) k="identical" ;; 108) k="leak" ;; 116) k="timeout" ;; 120) k="exit" ;; 127) k="not-found" ;; 141) k="interrupt" ;; 253) k="internal" ;; 254) k="unknown" ;; *) k="[exitString unknown \"$1\"]" ;; esac && [ -n "$k" ] || k="$1" && printf "%s\n" "$k" && shift; done
 }
 
 # IDENTICAL _return 27
@@ -1241,13 +1350,13 @@ _undo() {
   isPositiveInteger "$exitCode" || __catchArgument "$__usage" "Not an integer $(decorate value "$exitCode") (#$__count: $(decorate each code "${__saved[@]+"${__saved[@]}"}"))" || return $?
   while [ $# -gt 0 ]; do
     case "$1" in
-      --)
-        [ "${#args[@]}" -eq 0 ] || __execute "${args[@]}" || :
-        args=()
-        ;;
-      *)
-        args+=("$1")
-        ;;
+    --)
+      [ "${#args[@]}" -eq 0 ] || __execute "${args[@]}" || :
+      args=()
+      ;;
+    *)
+      args+=("$1")
+      ;;
     esac
     shift
   done
