@@ -274,7 +274,7 @@ __applicationValues() {
 
   __catchEnvironment "$usage" muzzle popd || return $?
 
-  __catchEnvironment "$usage" hookRunOptional --application "$application" application-environment | decorate wrap "$prefix" || return $?
+  __catchEnvironment "$usage" hookRunOptional --application "$application" application-environment | decorate wrap "$prefix" "" || return $?
 
   for variable in APPLICATION_NAME APPLICATION_CODE; do
     local value="${!variable-}"
