@@ -1,7 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace GoldenGoose;
-
 
 use Throwable;
 
@@ -12,10 +11,10 @@ try {
 } catch (Throwable $throwable) {
 	if ($_SERVER['PRODUCTION'] ?? false) {
 		header('HTTP/1.1 501 Server Error');
-		echo get_class($throwable);
+		echo $throwable::class;
 		error_log($throwable->getMessage() . PHP_EOL . $throwable->getTraceAsString());
 	} else {
-		echo "<h1>" . $throwable->getMessage() . "</h1>";
-		echo "<pre>" . $throwable->getTraceAsString() . "</pre>";
+		echo '<h1>' . $throwable->getMessage() . '</h1>';
+		echo '<pre>' . $throwable->getTraceAsString() . '</pre>';
 	}
 }
