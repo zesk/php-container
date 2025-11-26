@@ -5,3 +5,4 @@
 /vendor/
 /.composer/
 /test.stats
+/.php-cs-fixer.cache
