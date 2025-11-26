@@ -16,5 +16,5 @@ testContainerBuild() {
     --stderr-match "db  Built"
     --stderr-match "web  Built"
   )
-  assertExitCode --line "$LINENO" "${matches[@]}" 0 "$home/bin/tools.sh" phpContainerCompose --build || return $?
+  assertExitCode "${matches[@]}" 0 "$home/bin/tools.sh" phpContainerCompose --build || return $?
 }
