@@ -27,13 +27,13 @@ __buildTestSuite() {
   local usage="_${FUNCNAME[0]}"
   local testHome
 
-  testHome="$(__catchEnvironment "$usage" buildHome)" || return $?
-  [ -d "$testHome/test" ] || __throwArgument "$usage" "Missing test directory" || return $?
+  testHome="$(catchEnvironment "$usage" buildHome)" || return $?
+  [ -d "$testHome/test" ] || throwArgument "$usage" "Missing test directory" || return $?
 
   # Include our own test support files if needed
-  [ ! -d "$testHome/test/support" ] || __catchEnvironment "$usage" bashSourcePath "$testHome/test/support" || return $?
+  [ ! -d "$testHome/test/support" ] || catchEnvironment "$usage" bashSourcePath "$testHome/test/support" || return $?
 
-  __catchEnvironment "$usage" testTools testSuite --tests "$testHome/test/tests/" "$@" || return $?
+  catchEnvironment "$usage" testTools testSuite --tests "$testHome/test/tests/" "$@" || return $?
 }
 ___buildTestSuite() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"

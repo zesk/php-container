@@ -8,7 +8,7 @@
 __zeskTools() {
   local home
 
-  home=$(__environment buildHome) || return $?
+  home=$(catchEnvironment "returnMessage" buildHome) || return $?
 
   local zeskTools
 
@@ -17,8 +17,10 @@ __zeskTools() {
     if buildDebugEnabled bin-tools; then
       decorate info "Loading $(decorate file "$zeskTools") ..."
     fi
-    __environment bashSourcePath --exclude "*/__*.sh" "$zeskTools" || :
+    catchEnvironment "returnMessage" bashSourcePath --exclude "*/__*.sh" "$zeskTools" || :
   fi
+
+  unset "${FUNCNAME[0]}"
 }
 
 __zeskTools

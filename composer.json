@@ -1,31 +1,34 @@
 {
-  "name": "razzed/php-container",
-  "description": "Skeleton for PHP Applications",
-  "license": "proprietary",
-  "require": {
-    "psr/log": "^3",
-    "psr/cache": "^3",
-    "zesk/zesk": "^0.31.2",
-    "ext-mysqli": "*",
-    "ext-curl": "*",
-    "ext-zip": "*",
-    "ext-calendar": "*",
-    "ext-json": "*",
-    "ext-posix": "*",
-    "ext-pcntl": "*",
-    "ext-intl": "*",
-    "ext-readline": "*",
-    "php": ">=8.1"
-  },
-  "require-dev": {
-    "phpunit/phpunit": ">=10",
-    "friendsofphp/php-cs-fixer": "^3.4"
-  },
   "autoload": {
     "psr-4": {
       "GoldenGoose\\": "src/",
       "zesk\\": "vendor/zesk/zesk/src/"
     }
+  },
+  "description": "Skeleton for PHP Applications",
+  "extra": {
+    "deprecated": "7751cc1c995eab1d89f26b2b98febad04dc035de"
+  },
+  "license": "proprietary",
+  "name": "razzed/php-container",
+  "require": {
+    "ext-calendar": "*",
+    "ext-curl": "*",
+    "ext-intl": "*",
+    "ext-json": "*",
+    "ext-mysqli": "*",
+    "ext-pcntl": "*",
+    "ext-posix": "*",
+    "ext-readline": "*",
+    "ext-zip": "*",
+    "php": ">=8.1",
+    "psr/cache": "^3",
+    "psr/log": "^3",
+    "zesk/zesk": "^0.31.2"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.4",
+    "phpunit/phpunit": ">=10"
   },
   "version": "0.1.0"
 }

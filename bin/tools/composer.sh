@@ -27,7 +27,7 @@ composerInheritVersion() {
   local __saved=("$@") __count=$#
   while [ $# -gt 0 ]; do
     local argument="$1" __index=$((__count - $# + 1))
-    [ -n "$argument" ] || __throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
+    [ -n "$argument" ] || throwArgument "$usage" "blank #$__index/$__count ($(decorate each quote "${__saved[@]}"))" || return $?
     case "$argument" in
       # _IDENTICAL_ --help 4
       --help)
@@ -49,18 +49,18 @@ composerInheritVersion() {
         ;;
       *)
         # _IDENTICAL_ argumentUnknown 1
-        __throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
+        throwArgument "$usage" "unknown #$__index/$__count \"$argument\" ($(decorate each code "${__saved[@]}"))" || return $?
         ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
   done
 
-  version=$(__catchEnvironment "$usage" hookVersionCurrent) || return $?
+  version=$(catchEnvironment "$usage" hookVersionCurrent) || return $?
   if [ -z "$version" ]; then
-    __throwEnvironment "$usage" "Version returned by version-current hook is blank" || return $?
+    throwEnvironment "$usage" "Version returned by version-current hook is blank" || return $?
   fi
-  [ -n "$home" ] || home=$(__catchEnvironment "$usage" buildHome) || return $?
+  [ -n "$home" ] || home=$(catchEnvironment "$usage" buildHome) || return $?
 
   if ! $rawFlag; then
     # Strip leading characters (usually a v)
@@ -71,11 +71,11 @@ composerInheritVersion() {
 
   decoratedComposerJSON="$(decorate file "$composerJSON")"
 
-  [ -f "$composerJSON" ] || __throwEnvironment "$usage" "No $decoratedComposerJSON" || return $?
+  [ -f "$composerJSON" ] || throwEnvironment "$usage" "No $decoratedComposerJSON" || return $?
 
   newComposerJSON="$composerJSON.${FUNCNAME[0]}"
 
-  __catchEnvironment "$usage" jq --arg version "$version" ". + { version: \$version }" <"$composerJSON" >"$newComposerJSON" || _clean $? "$newComposerJSON" || return $?
+  catchEnvironment "$usage" jq --arg version "$version" ". + { version: \$version }" <"$composerJSON" >"$newComposerJSON" || returnClean$? "$newComposerJSON" || return $?
 
   local decoratedVersion
   decoratedVersion=$(decorate value "$version")
@@ -83,11 +83,11 @@ composerInheritVersion() {
     $quietFlag || statusMessage --last decorate info "$decoratedComposerJSON up to date at version $decoratedVersion"
     ! $statusFlag || return "$(_code identical)"
   else
-    __catchEnvironment "$usage" mv -f "$newComposerJSON" "$composerJSON" || _clean $? "$newComposerJSON" || return $?
+    catchEnvironment "$usage" mv -f "$newComposerJSON" "$composerJSON" || returnClean$? "$newComposerJSON" || return $?
     $quietFlag || statusMessage --last decorate info "$decoratedComposerJSON updated to version $decoratedVersion"
   fi
 }
 _composerInheritVersion() {
-  # _IDENTICAL_ usageDocument 1
+  # __IDENTICAL__ usageDocument 1
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
 }

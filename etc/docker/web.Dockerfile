@@ -9,6 +9,8 @@ ENV BUILD_CODE=web
 ENV USER_HOME=/var/www
 
 ENV APPLICATION_HOME=/var/www/app
+ENV LOG_HOME=/var/www/log
+ENV APPLICATION_USER=www-data
 ENV APPLICATION_PREFIX=""
 ENV WEB_ROOT=$APPLICATION_HOME/public
 
@@ -31,13 +33,13 @@ COPY .env /tmp/application.conf
 
 ADD . "$APPLICATION_HOME"
 
-RUN /usr/local/sbin/install.sh __installEnvironment /tmp/application.conf "$APPLICATION_CONF" "$APPLICATION_HOME" "$APPLICATION_PREFIX" XDEBUG_IDE_KEY XDEBUG_CLIENT_HOST
-
 # ===========================================================================
 # -- Middle part --
 
-RUN chmod 640 "$APPLICATION_CONF"
-RUN chown root:www-data "$APPLICATION_CONF"
+RUN /usr/local/sbin/install.sh __installEnvironment /tmp/application.conf "$APPLICATION_CONF" "$APPLICATION_HOME" "$APPLICATION_PREFIX" PHP_IDE_CONFIG XDEBUG_CLIENT_HOST APPLICATION_USER LOG_HOME
+RUN chmod 640 "$APPLICATION_CONF" && chown "root:$APPLICATION_USER" "$APPLICATION_CONF"
+
+RUN mkdir -p "$LOG_HOME" && chmod 770 "$LOG_HOME" && chown "root:$APPLICATION_USER" "$LOG_HOME"
 
 # PHP
 COPY etc/docker/php.ini /usr/local/etc/php/MAP.php.ini
@@ -73,5 +75,5 @@ RUN rm -rf "/var/www/html"
 
 RUN chown www-data "$USER_HOME/.bashrc" "$USER_HOME"
 
-USER www-data
+USER "$APPLICATION_USER"
 WORKDIR "$APPLICATION_HOME"

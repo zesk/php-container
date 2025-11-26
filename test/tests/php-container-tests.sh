@@ -10,7 +10,7 @@ testContainerBuild() {
 
   local home
 
-  home=$(__catchEnvironment "$usage" buildHome) || return $?
+  home=$(catchEnvironment "$usage" buildHome) || return $?
 
   matches=(
     --stderr-match "db  Built"
