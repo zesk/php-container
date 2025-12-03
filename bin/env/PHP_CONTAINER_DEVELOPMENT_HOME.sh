@@ -2,11 +2,11 @@
 # Copyright &copy; 2025 Market Acumen, Inc.
 # Type: String
 # Category: Application
-# All about PHP_CONTAINER_HOME and how it is used
-export PHP_CONTAINER_HOME
-PHP_CONTAINER_HOME="${PHP_CONTAINER_HOME-}"
+# All about PHP_CONTAINER_DEVELOPMENT_HOME and how it is used
+export PHP_CONTAINER_DEVELOPMENT_HOME
+PHP_CONTAINER_DEVELOPMENT_HOME="${PHP_CONTAINER_DEVELOPMENT_HOME-}"
 
-if [ -z "${PHP_CONTAINER_HOME-}" ]; then
+if [ -z "${PHP_CONTAINER_DEVELOPMENT_HOME-}" ]; then
   # Fetch the PHP container home
   phpContainerHome() {
     local handler="_${FUNCNAME[0]}"
@@ -23,5 +23,5 @@ if [ -z "${PHP_CONTAINER_HOME-}" ]; then
     usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
   }
 
-  PHP_CONTAINER_HOME=$(phpContainerHome)
+  PHP_CONTAINER_DEVELOPMENT_HOME=$(phpContainerHome)
 fi

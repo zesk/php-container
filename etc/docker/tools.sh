@@ -10,9 +10,9 @@
 phpContainerSync() {
   local handler="_${FUNCNAME[0]}"
 
-  export PHP_CONTAINER_HOME
-  catchReturn "$handler" buildEnvironmentLoad PHP_CONTAINER_HOME || return $?
-  developerDevelopmentLink --handler "$handler" --path "etc/docker" --binary echo --variable PHP_CONTAINER_HOME --development-path "etc/docker" --version-json "composer.json" --copy
+  export PHP_CONTAINER_DEVELOPMENT_HOME
+  catchReturn "$handler" buildEnvironmentLoad PHP_CONTAINER_DEVELOPMENT_HOME || return $?
+  developerDevelopmentLink --handler "$handler" --path "etc/docker" --binary echo --variable PHP_CONTAINER_DEVELOPMENT_HOME --development-path "etc/docker" --version-json "composer.json" --copy
 }
 _phpContainerSync() {
   # __IDENTICAL__ usageDocument 1
