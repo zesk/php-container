@@ -7,7 +7,7 @@
   },
   "description": "Skeleton for PHP Applications",
   "extra": {
-    "deprecated": "7751cc1c995eab1d89f26b2b98febad04dc035de"
+    "deprecated": "cd4ef5359f49970b3258781f736d7109b63c39d7"
   },
   "license": "proprietary",
   "name": "razzed/php-container",

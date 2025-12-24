@@ -11,9 +11,14 @@
 
 # shellcheck source=/dev/null
 if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
-  # PHP Container
+
   # - `phpContainerCompose build`
   # - Container `phpContainerBash` `suPHPContainerBash`
+  __phpContainerDockerHelp() {
+    markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
+  }
+
+  # PHP Container
   __phpContainerContext() {
     # Title
     local name
@@ -30,10 +35,10 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
     export BUILD_PROJECT_DEACTIVATE="${FUNCNAME[0]}Undo"
 
-    pathConfigure --last "$home/bin" "$home/bin/build"
+    pathConfigure --last "$home/bin" "$home/vendor/bin" "$home/bin/build"
 
-    simpleMarkdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
-
+    markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
+    ! whichExists docker || __phpContainerDockerHelp
     unset "${FUNCNAME[0]}" "_${FUNCNAME[0]}"
   }
   ___phpContainerContext() {
@@ -55,7 +60,7 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
     statusMessage decorate notice "Deactivating $name ..."
 
-    pathRemove "$home/bin" "$home/bin/build"
+    pathRemove "$home/bin" "$home/vendor/bin" "$home/bin/build"
 
     unset "${FUNCNAME[0]}" 2>/dev/null
   }

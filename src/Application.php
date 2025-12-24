@@ -16,7 +16,7 @@ class Application extends ApplicationBase
 	 */
 	protected function afterConfigure(): void
 	{
-		$this->router->addRoute('index', [
+		$this->router->addRoute('.', [
 			'method' => $this->homeHandler(...),
 			'arguments' => ['{request}'],
 		]);
