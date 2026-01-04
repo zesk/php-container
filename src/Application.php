@@ -9,7 +9,8 @@ use zesk\HTTP;
 use zesk\Request;
 use zesk\Response;
 
-class Application extends ApplicationBase {
+class Application extends ApplicationBase
+{
 	/**
 	 * @return void
 	 * @throws ClassNotFound
@@ -20,14 +21,14 @@ class Application extends ApplicationBase {
 			'method'    => $this->homeHandler(...),
 			'arguments' => [
 				'{request}',
-				"Hello, world!",
+				'Hello, world!',
 			],
 		]);
 		$this->router->addRoute('test', [
 			'method'    => $this->homeHandler(...),
 			'arguments' => [
 				'{request}',
-				"Test",
+				'Test',
 			],
 		]);
 		$this->router->addRoute('favicon.ico', [
