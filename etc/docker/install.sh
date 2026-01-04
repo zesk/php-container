@@ -2,7 +2,7 @@
 #
 # Install components of our operating system
 #
-# Copyright &copy; 2025, Market Acumen, Inc.
+# Copyright &copy; 2026, Market Acumen, Inc.
 #
 
 # Run apt commands non-interactively
@@ -114,7 +114,6 @@ __installPHP() {
     done
     shift
   done
-
 }
 
 # Install xdebug
@@ -128,7 +127,7 @@ __installPHPXdebug() {
   fi
   iniFile=$(phpIniFile)
   if [ ! -f "$iniFile" ]; then
-    printf -- "%s\n" "$iniFile file not found" 1>&2
+    printf -- "%s\n" "php.ini file not found" 1>&2
     return 1
   fi
   # packageInstall php-dev

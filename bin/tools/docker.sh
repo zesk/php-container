@@ -2,7 +2,7 @@
 #
 # Docker related
 #
-# Copyright &copy; 2025 Market Acumen, Inc.
+# Copyright &copy; 2026 Market Acumen, Inc.
 #
 
 if whichExists docker; then
@@ -35,14 +35,17 @@ if whichExists docker; then
     local password
     password=$(catchReturn "$handler" privateRootPassword) || return $?
     catchReturn "$handler" muzzle pushd "$(buildHome)" || return $?
-    local envs=(--env APPLICATION_USER=www-data
+    local envs=(
+      --arg "DATABASE_ROOT_PASSWORD=$password"
+      --env APPLICATION_USER=www-data
       --env PHP_IDE_CONFIG=serverName=phpContainer
       --env LOG_HOME=/var/www/log
       --env CONTAINER_PORT_DATABASE=3307
       --env CONTAINER_PORT_WEB=8000
       --env XDEBUG_IDE_KEY=phpContainer
-      --env XDEBUG_CLIENT_HOST=host.docker.internal)
-    catchReturn "$handler" dockerCompose "${envs[@]}" --arg "DATABASE_ROOT_PASSWORD=$password" "$@" || returnUndo $? muzzle popd || return $?
+      --env XDEBUG_CLIENT_HOST=host.docker.internal
+    )
+    catchReturn "$handler" dockerCompose "${envs[@]}" "$@" || returnUndo $? muzzle popd || return $?
     catchReturn "$handler" muzzle popd || return $?
   }
   _phpContainerCompose() {

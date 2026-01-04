@@ -2,7 +2,7 @@
 #
 # Sample live version script, uses github API to fetch release version
 #
-# Copyright &copy; 2025 Market Acumen, Inc.
+# Copyright &copy; 2026 Market Acumen, Inc.
 #
 
 # shellcheck source=/dev/null

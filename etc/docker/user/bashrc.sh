@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
 #
-# Copyright &copy; 2025, Market Acumen, Inc.
+# Copyright &copy; 2026, Market Acumen, Inc.
 #
 # User bash configuration
 #
 
-__bashInitialize() {
-  local file files=("build/tools.sh" "application.sh")
-  for file in "${files[@]}"; do
-    file="/usr/local/bin/$file"
-    if [ ! -f "$file" ]; then
-      printf -- "%s\n" "$file is missing" 1>&2
-      return 1
-    fi
-    # shellcheck source=/dev/null
-    if ! source "$file"; then
-      printf -- "%s\n" "$file is corrupt" 1>&2
-      return 1
-    fi
-  done
-  applicationBashPrompt "$1 [$(decorate code "$2")]"
+__bashPromptConfigure() {
+  local colorScheme userColor colors=()
+  local label="${1-none}" && shift
+
+  colorScheme=$(bashPromptColorScheme "$(consoleConfigureColorMode)")
+  [ "$(id -u)" = 0 ] && userColor="warning" || userColor="black-contrast"
+  IFS=":" read -r -d "" -a colors <<<"$colorScheme" || :
+  colors[2]="$userColor"
+  colorScheme="$(listJoin ":" "${colors[@]}")"
+
+  bashPrompt --colors "$colorScheme" --label "💰$label" bashPromptModule_ApplicationPath bashPromptModule_binBuild bashPromptModule_TermColors "$@"
+  unset "${FUNCNAME[0]}"
 }
 
 __bashShellOptions() {
@@ -42,10 +39,33 @@ __bashShellOptions() {
   shopt -s cmdhist
   # If enabled, and the cmdhist option is enabled, multi-line commands are saved to the history with embedded newlines rather than using semicolon separators where possible.
   shopt -s lithist
+  unset "${FUNCNAME[0]}"
+}
+
+__bashPathConfigure() {
+  pathConfigure --first /usr/local/bin --first /usr/bin --first /bin
+  unset "${FUNCNAME[0]}"
+}
+__bashInitialize() {
+  local file files=("build/tools.sh")
+  for file in "${files[@]}"; do
+    file="/usr/local/bin/$file"
+    if [ ! -f "$file" ]; then
+      printf -- "%s\n" "$file is missing" 1>&2
+      return 1
+    fi
+    # shellcheck source=/dev/null
+    if ! source "$file"; then
+      printf -- "%s\n" "$file is corrupt" 1>&2
+      return 1
+    fi
+  done
+  __bashPromptConfigure "$1 [$(decorate code "$2")]"
+  __bashShellOptions
+  __bashPathConfigure
+  ! isiTerm2 || iTerm2Init
+
+  unset "${FUNCNAME[0]}"
 }
 
 __bashInitialize "{APPLICATION_NAME}" "{BUILD_CODE}"
-__bashShellOptions
-! isiTerm2 || iTerm2Init
-
-export PATH="$PATH:/usr/local/bin"

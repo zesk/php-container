@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *
  */
@@ -8,14 +9,14 @@ if (!require_once 'vendor/autoload.php') {
 	echo 'Invalid vendor';
 }
 
-use GoldenGoose\Application;
+use zesk\Application;
 use zesk\ApplicationLoader;
 
 $version = json_decode(file_get_contents(__DIR__ . '/composer.json'), true)['version'] ?? 'no composer.json';
 return ApplicationLoader::application([
-	Application::OPTION_APPLICATION_CLASS => Application::class,
-	Application::OPTION_PATH => __DIR__,
-	Application::OPTION_VERSION => $version,
-	Application::OPTION_DEVELOPMENT => $_SERVER['DEVELOPMENT'] ?? true,
-	Application::OPTION_CONFIGURATION_FILES => ['.env'],
-] + (is_array($GLOBALS['ZESK'] ?? null) ? $GLOBALS['ZESK'] : []));
+		Application::OPTION_APPLICATION_CLASS   => GoldenGoose\Application::class,
+		Application::OPTION_PATH                => __DIR__,
+		Application::OPTION_VERSION             => $version,
+		Application::OPTION_DEVELOPMENT         => $_SERVER['DEVELOPMENT'] ?? true,
+		Application::OPTION_CONFIGURATION_FILES => ['.env'],
+	] + (is_array($GLOBALS['ZESK'] ?? null) ? $GLOBALS['ZESK'] : []));

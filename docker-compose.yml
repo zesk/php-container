@@ -5,7 +5,7 @@ services:
       XDEBUG_CONFIG: remote_host=host.docker.internal
     build:
       context: ./
-      dockerfile: ./etc/docker/web.Dockerfile
+      dockerfile: ./etc/docker/web/web.Dockerfile
     volumes:
       - ./:/var/www/app/
     ports:
@@ -17,7 +17,7 @@ services:
       - database_data:/var/lib/mysql
     build:
       context: ./
-      dockerfile: ./etc/docker/db.Dockerfile
+      dockerfile: ./etc/docker/db/db.Dockerfile
     ports:
       - "$CONTAINER_PORT_DATABASE:3306"
     healthcheck:

@@ -2,11 +2,31 @@
 #
 # PHP Container related
 #
-# Copyright &copy; 2025 Market Acumen, Inc.
+# Copyright &copy; 2026 Market Acumen, Inc.
 #
 # Distribute: true
 #
 
+# - `phpContainerSync` `phpContainerInstall` - Update sources from main project. See: `PHP_CONTAINER_DEVELOPMENT_HOME`
+# - `phpContainerIdentical`
+phpContainerHelp() {
+  insideDocker || markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
+}
+
+# Check or apply docker identical to PHP container
+phpContainerIdentical() {
+  local handler="_${FUNCNAME[0]}"
+
+  local home
+  home=$(catchReturn "$handler" buildHome) || return $?
+
+  local rr=(--repair "$home/etc/docker/identical/") prefix="# IDENTICAL"
+  catchReturn "$handler" identicalCheck --extension "Dockerfile" --prefix "$prefix" --cd "$home/etc/docker" "${rr[@]+"${rr[@]}"}" "$@" || return $?
+}
+_phpContainerIdentical() {
+  # IDENTICAL usageDocument 1
+  usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
+}
 phpContainerSync() {
   local handler="_${FUNCNAME[0]}"
 

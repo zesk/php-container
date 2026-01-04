@@ -2,7 +2,7 @@
 #
 # composer-related
 #
-# Copyright &copy; 2025 Market Acumen, Inc.
+# Copyright &copy; 2026 Market Acumen, Inc.
 #
 
 # For any project, ensures the `version` field in `composer.json` matches `runHook version-current`

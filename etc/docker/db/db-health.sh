@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright &copy; 2025, Market Acumen, Inc.
+# Copyright &copy; 2026, Market Acumen, Inc.
 #
 # Is the database running and doing ok?
 #

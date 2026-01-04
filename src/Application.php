@@ -1,34 +1,47 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace GoldenGoose;
 
 use zesk\Application as ApplicationBase;
+use zesk\Exception\ClassNotFound;
 use zesk\HTTP;
 use zesk\Request;
 use zesk\Response;
 
-class Application extends ApplicationBase
-{
+class Application extends ApplicationBase {
 	/**
 	 * @return void
-	 * @throws \zesk\Exception\ClassNotFound
-	 * @throws \zesk\Exception\SemanticsException
+	 * @throws ClassNotFound
 	 */
 	protected function afterConfigure(): void
 	{
 		$this->router->addRoute('.', [
-			'method' => $this->homeHandler(...),
-			'arguments' => ['{request}'],
+			'method'    => $this->homeHandler(...),
+			'arguments' => [
+				'{request}',
+				"Hello, world!",
+			],
+		]);
+		$this->router->addRoute('test', [
+			'method'    => $this->homeHandler(...),
+			'arguments' => [
+				'{request}',
+				"Test",
+			],
 		]);
 		$this->router->addRoute('favicon.ico', [
-			'method' => $this->faviconHandler(...),
+			'method'    => $this->faviconHandler(...),
 			'arguments' => ['{request}'],
 		]);
 	}
 
-	public function homeHandler(Request $request): Response
+	public function homeHandler(Request $request, string $message = null): Response
 	{
-		return $this->application->responseFactory($request)->json()->setData(['message' => 'Hello world!', 'path' => $request->path()]);
+		return $this->application->responseFactory($request)->json()->setData([
+			'message' => $message,
+			'path'    => $request->path(),
+		]);
 	}
 
 	public function faviconHandler(Request $request): Response

@@ -6,20 +6,22 @@
 #
 #     source bin/developer.sh
 #
-# Copyright &copy; 2025 Market Acumen, Inc.
+# Copyright &copy; 2026 Market Acumen, Inc.
 #
 
 # shellcheck source=/dev/null
 if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
-  # - `phpContainerCompose build`
-  # - Container `phpContainerBash` `suPHPContainerBash`
+  # - `phpContainerCompose build` - Build containers
+  # - `phpContainerBash` `suPHPContainerBash` - Connect to container instances
   __phpContainerDockerHelp() {
     markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
   }
 
   # PHP Container
   __phpContainerContext() {
+    local handler="_${FUNCNAME[0]}"
+
     # Title
     local name
     name=$(catchReturn "$handler" buildEnvironmentGet APPLICATION_NAME) || return $?
@@ -28,7 +30,7 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
     bigText --bigger "$title"
 
     muzzle reloadChanges --stop 2>&1 || :
-    muzzle reloadChanges --name "$(buildEnvironmentGet APPLICATION_NAME)" "bin/developer.sh" "bin/tools/" "bin/developer.sh"
+    muzzle reloadChanges --name "$(buildEnvironmentGet APPLICATION_NAME)" "bin/developer.sh" "bin/tools/" "bin/developer.sh" "etc/docker/tools.sh"
     muzzle buildCompletion
 
     bashPrompt --skip-prompt bashPromptModule_TermColors
@@ -39,7 +41,10 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
     markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
     ! whichExists docker || __phpContainerDockerHelp
-    unset "${FUNCNAME[0]}" "_${FUNCNAME[0]}"
+    phpContainerHelp
+
+    unset __phpContainerDockerHelp
+    unset "${FUNCNAME[0]}" "$handler"
   }
   ___phpContainerContext() {
     # __IDENTICAL__ usageDocument 1
@@ -47,11 +52,11 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
   }
 
   __phpContainerContextUndo() {
-    local handler="returnMessage"
-    local home
+    local handler="_${FUNCNAME[0]}"
 
     muzzle reloadChanges --stop 2>&1
 
+    local home
     home=$(catchReturn "$handler" buildHome) || return $?
 
     local name
@@ -62,7 +67,11 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
     pathRemove "$home/bin" "$home/vendor/bin" "$home/bin/build"
 
-    unset "${FUNCNAME[0]}" 2>/dev/null
+    unset "${FUNCNAME[0]}" "$handler"
+  }
+  ___phpContainerContextUndo() {
+    # __IDENTICAL__ usageDocument 1
+    usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
   }
 
   __phpContainerContext

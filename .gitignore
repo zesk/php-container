@@ -6,3 +6,7 @@
 /.composer/
 /test.stats
 /.php-cs-fixer.cache
+/test-coverage/
+/phpunit-testcase-last.json
+/.memory_get_usage
+/.phpunit.cache/
