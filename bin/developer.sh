@@ -40,7 +40,7 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
     pathConfigure --last "$home/bin" "$home/vendor/bin" "$home/bin/build"
 
     markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
-    ! whichExists docker || __phpContainerDockerHelp
+    ! executableExists docker || __phpContainerDockerHelp
     phpContainerHelp
 
     unset __phpContainerDockerHelp

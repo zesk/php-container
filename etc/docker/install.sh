@@ -80,7 +80,7 @@ __installPHP() {
 
   if isFunction phpComposerInstall; then
     phpComposerInstall
-  elif ! whichExists composer; then
+  elif ! executableExists composer; then
     local target="/usr/local/bin/composer"
     local tempBinary="$target.$$"
     catchReturn "$handler" urlFetch "https://getcomposer.org/composer.phar" "$tempBinary" || returnClean $? "$tempBinary" || return $?
@@ -163,11 +163,11 @@ __mapFiles() {
       --keep)
         shift
         local keep
-        keep=$(usageArgumentDirectory "$handler" "directory" "${1-}") || return $?
+        keep=$(validate "$handler" Directory "directory" "${1-}") || return $?
         deleteArgs+=(! -path "${keep%/}")
         ;;
       *)
-        directory=$(usageArgumentDirectory "$handler" "directory" "${1-}") || return $?
+        directory=$(validate "$handler" Directory "directory" "${1-}") || return $?
         directories+=("$directory")
         ;;
     esac
@@ -179,7 +179,7 @@ __mapFiles() {
 
   local fileCount=0 start
   catchReturn "$handler" environmentFileLoad "/etc/application.conf" || return $?
-  start=$(catchEnvironment "$handler" timingStart) || return $?
+  start=$(catchReturn "$handler" timingStart) || return $?
   for directory in "${directories[@]}"; do
     local fileName
     while read -r fileName; do
@@ -253,7 +253,7 @@ __dsnExpansions() {
   while [ $# -gt 0 ]; do
     local variable
 
-    variable=$(usageArgumentEnvironmentVariable "$handler" "variable" "$1") || return $?
+    variable=$(validate "$handler" EnvironmentVariable "variable" "$1") || return $?
 
     statusMessage decorate info "Processing $variable ..."
 
@@ -317,12 +317,12 @@ __installEnvironment() {
   local handler="returnMessage"
   local source target finalTarget application=""
 
-  source=$(usageArgumentFile "$handler" "source" "${1-}") && shift || return $?
+  source=$(validate "$handler" File "source" "${1-}") && shift || return $?
 
-  finalTarget=$(usageArgumentFileDirectory "$handler" "target" "${1-}") && shift || return $?
+  finalTarget=$(validate "$handler" FileDirectory "target" "${1-}") && shift || return $?
 
   application="${1-}" && shift
-  [ -z "$application" ] || application=$(usageArgumentDirectory "$handler" "application" "$application") || return $?
+  [ -z "$application" ] || application=$(validate "$handler" Directory "application" "$application") || return $?
   prefix="${1-}" && shift
 
   catchReturn "$handler" environmentFileLoad "$source" || return $?
@@ -358,20 +358,23 @@ __installEnvironment() {
   throwEnvironment "$handler" statusMessage --last decorate error "$finalTarget does NOT exist" 1>&2 || return $?
 }
 
-# IDENTICAL returnMessage 39
+# IDENTICAL returnMessage 42
 
 # Return passed in integer return code and output message to `stderr` (non-zero) or `stdout` (zero)
-# Argument: exitCode - Required. UnsignedInteger. Exit code to return. Default is 1.
-# Argument: message ... - Optional. String. Message to output
+# Argument: exitCode - UnsignedInteger. Required. Exit code to return. Default is 1.
+# Argument: message ... - String. Optional. Message to output
 # Return Code: exitCode
 # Requires: isUnsignedInteger printf returnMessage
 returnMessage() {
   local handler="_${FUNCNAME[0]}"
-  local to=1 icon="✅" code="${1:-1}" && shift 2>/dev/null
+  local code="${1:-1}" && shift 2>/dev/null
   if [ "$code" = "--help" ]; then "$handler" 0 && return; fi
   isUnsignedInteger "$code" || returnMessage 2 "${FUNCNAME[1]-none}:${BASH_LINENO[1]-} -> ${handler#_} non-integer \"$code\"" "$@" || return $?
-  if [ "$code" -gt 0 ]; then icon="❌ [$code]" && to=2; fi
-  printf -- "%s %s\n" "$icon" "${*-§}" 1>&"$to"
+  if [ "$code" -gt 0 ]; then
+    printf -- "%s %s\n" "❌ [$code]" "${*-§}" 1>&2
+  else
+    printf -- "%s %s\n" "✅" "${*-§}"
+  fi
   return "$code"
 }
 _returnMessage() {
@@ -379,12 +382,12 @@ _returnMessage() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
 }
 
-# Test if an argument is an unsigned integer
+# Summary: Is value an unsigned integer?
+# Test if a value is a 0 or greater integer. Leading "+" is ok.
 # Source: https://stackoverflow.com/questions/806906/how-do-i-test-if-a-variable-is-a-number-in-bash
 # Credits: F. Hauri - Give Up GitHub (isnum_Case)
 # Original: is_uint
 # Argument: value - EmptyString. Value to test if it is an unsigned integer.
-# Usage: {fn} argument ...
 # Return Code: 0 - if it is an unsigned integer
 # Return Code: 1 - if it is not an unsigned integer
 # Requires: returnMessage
@@ -422,8 +425,8 @@ __source() {
 # IDENTICAL __tools 8
 
 # Load build tools and run command
-# Argument: relativeHome - Required. Directory. Path to application root.
-# Argument: command ... - Optional. Callable. A command to run and optional arguments.
+# Argument: relativeHome - Directory. Required. Path to application root.
+# Argument: command ... - Callable. Optional. A command to run and optional arguments.
 # Requires: __source
 __tools() {
   __source bin/build/tools.sh "$@"

@@ -1,40 +1,40 @@
 {
-	"autoload": {
-		"psr-4": {
-			"GoldenGoose\\": "src/",
-			"TestGoldenGoose\\": "test/src/",
-			"GoldenGooseTests\\": "test/unit/",
-			"zesk\\": "vendor/zesk/zesk/src/"
-		}
-	},
-	"description": "Skeleton for PHP Applications",
-	"extra": {
-		"deprecated": "cd4ef5359f49970b3258781f736d7109b63c39d7"
-	},
-	"license": "proprietary",
-	"name": "razzed/php-container",
-	"require": {
-		"ext-gd": "*",
-		"ext-sockets": "*",
-		"ext-calendar": "*",
-		"ext-curl": "*",
-		"ext-intl": "*",
-		"ext-json": "*",
-		"ext-mysqli": "*",
-		"ext-pcntl": "*",
-		"ext-posix": "*",
-		"ext-readline": "*",
-		"ext-zip": "*",
-		"php": ">=8.1",
-		"psr/cache": "^3",
-		"psr/log": "^3",
-		"zesk/zesk": "^0.32.0"
-	},
-	"require-dev": {
-		"friendsofphp/php-cs-fixer": "^3.4",
-		"phpunit/phpunit": ">=10",
-		"phpunit/php-code-coverage": ">=10",
-		"phpunit/php-file-iterator": ">=4"
-	},
-	"version": "0.1.0"
+  "autoload": {
+    "psr-4": {
+      "GoldenGooseTests\\": "test/unit/",
+      "GoldenGoose\\": "src/",
+      "TestGoldenGoose\\": "test/src/",
+      "zesk\\": "vendor/zesk/zesk/src/"
+    }
+  },
+  "description": "Skeleton for PHP Applications",
+  "extra": {
+    "deprecated": "d40a9bcdfacbbd64513e0bcd10857a21a4d387fc"
+  },
+  "license": "proprietary",
+  "name": "razzed/php-container",
+  "require": {
+    "ext-calendar": "*",
+    "ext-curl": "*",
+    "ext-gd": "*",
+    "ext-intl": "*",
+    "ext-json": "*",
+    "ext-mysqli": "*",
+    "ext-pcntl": "*",
+    "ext-posix": "*",
+    "ext-readline": "*",
+    "ext-sockets": "*",
+    "ext-zip": "*",
+    "php": ">=8.1",
+    "psr/cache": "^3",
+    "psr/log": "^3",
+    "zesk/zesk": "^0.32.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.4",
+    "phpunit/php-code-coverage": ">=10",
+    "phpunit/php-file-iterator": ">=4",
+    "phpunit/phpunit": ">=10"
+  },
+  "version": "0.1.0"
 }

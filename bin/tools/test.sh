@@ -8,7 +8,7 @@ phpContainerTestPHPUnit() {
   local handler="_${FUNCNAME[0]}"
   local testHome
 
-  testHome="$(catchEnvironment "$handler" buildHome)" || return $?
+  testHome="$(catchReturn "$handler" buildHome)" || return $?
   [ -d "$testHome/test" ] || throwArgument "$handler" "Missing test directory" || return $?
   local bin="$testHome/vendor/bin/phpunit"
   [ -x "$bin" ] || throwArgument "$handler" "Missing phpunit binary: $(decorate file "$bin")" || return $?
@@ -23,13 +23,13 @@ phpContainerTestBash() {
   local handler="_${FUNCNAME[0]}"
   local testHome
 
-  testHome="$(catchEnvironment "$handler" buildHome)" || return $?
+  testHome="$(catchReturn "$handler" buildHome)" || return $?
   [ -d "$testHome/test" ] || throwArgument "$handler" "Missing test directory" || return $?
 
   # Include our own test support files if needed
   [ ! -d "$testHome/test/support" ] || catchEnvironment "$handler" bashSourcePath "$testHome/test/support" || return $?
 
-  catchEnvironment "$handler" testTools testSuite --tests "$testHome/test/tests/" "$@" || return $?
+  catchEnvironment "$handler" testSuite --tests "$testHome/test/tests/" "$@" || return $?
 }
 _phpContainerTestBash() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"

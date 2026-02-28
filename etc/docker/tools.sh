@@ -10,7 +10,7 @@
 # - `phpContainerSync` `phpContainerInstall` - Update sources from main project. See: `PHP_CONTAINER_DEVELOPMENT_HOME`
 # - `phpContainerIdentical`
 phpContainerHelp() {
-  insideDocker || markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
+  dockerInside || markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
 }
 
 # Check or apply docker identical to PHP container
@@ -24,7 +24,7 @@ phpContainerIdentical() {
   catchReturn "$handler" identicalCheck --extension "Dockerfile" --prefix "$prefix" --cd "$home/etc/docker" "${rr[@]+"${rr[@]}"}" "$@" || return $?
 }
 _phpContainerIdentical() {
-  # IDENTICAL usageDocument 1
+  # __IDENTICAL__ usageDocument 1
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"
 }
 phpContainerSync() {
@@ -51,7 +51,7 @@ phpContainerInstall() {
   fi
   export PHP_CONTAINER_DEVELOPMENT_HOME
   if ! muzzle buildEnvironmentFiles PHP_CONTAINER_DEVELOPMENT_HOME 2>&1; then
-    catchReturn "$handler" environmentAddFile PHP_CONTAINER_DEVELOPMENT_HOME || return $?
+    catchReturn "$handler" buildEnvironmentAdd PHP_CONTAINER_DEVELOPMENT_HOME || return $?
   fi
   catchReturn "$handler" buildEnvironmentLoad PHP_CONTAINER_DEVELOPMENT_HOME || return $?
   [ -n "$PHP_CONTAINER_DEVELOPMENT_HOME" ] || throwEnvironment "$handler" "Need PHP_CONTAINER_DEVELOPMENT_HOME" || return $?

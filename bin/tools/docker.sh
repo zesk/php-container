@@ -5,7 +5,7 @@
 # Copyright &copy; 2026 Market Acumen, Inc.
 #
 
-if whichExists docker; then
+if executableExists docker; then
 
   # Fetch the root password for a MySQL compatible database
   privateRootPassword() {
