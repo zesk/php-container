@@ -1,0 +1,1 @@
+testContainerBuild suite=php-container test/tests/php-container-tests.sh

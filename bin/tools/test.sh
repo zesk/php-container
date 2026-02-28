@@ -29,7 +29,7 @@ phpContainerTestBash() {
   # Include our own test support files if needed
   [ ! -d "$testHome/test/support" ] || catchEnvironment "$handler" bashSourcePath "$testHome/test/support" || return $?
 
-  catchEnvironment "$handler" testSuite --tests "$testHome/test/tests/" "$@" || return $?
+  catchEnvironment "$handler" testSuite --tests "$testHome/test/tests/" --index-file "$testHome/test/tests.index" "$@" || return $?
 }
 _phpContainerTestBash() {
   usageDocument "${BASH_SOURCE[0]}" "${FUNCNAME[0]#_}" "$@"

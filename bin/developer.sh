@@ -14,6 +14,8 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
 
   # - `phpContainerCompose build` - Build containers
   # - `phpContainerBash` `suPHPContainerBash` - Connect to container instances
+  # - `phpContainerTestPHPUnit` - Configured `phpunit` wrapper`
+  # - `phpContainerTestBash` - Configured `testSuite` wrapper
   __phpContainerDockerHelp() {
     markdownToConsole < <(bashFunctionComment "${BASH_SOURCE[0]}" "${FUNCNAME[0]}")
   }
@@ -22,15 +24,18 @@ if source "${BASH_SOURCE[0]%/*}/tools.sh"; then
   __phpContainerContext() {
     local handler="_${FUNCNAME[0]}"
 
+    local home && home=$(catchReturn "$handler" buildHome) || return $?
+
     # Title
-    local name
-    name=$(catchReturn "$handler" buildEnvironmentGet APPLICATION_NAME) || return $?
+    local name && name=$(catchReturn "$handler" buildEnvironmentGet APPLICATION_NAME) || return $?
     [ -n "$name" ] || name=$(basename "$home")
     title="$name $(catchReturn "$handler" hookVersionCurrent)" || return $?
-    bigText --bigger "$title"
+    bigText "$title" | decorate decoration
+
+    catchReturn "$handler" gitInstallHooks || return $?
 
     muzzle reloadChanges --stop 2>&1 || :
-    muzzle reloadChanges --name "$(buildEnvironmentGet APPLICATION_NAME)" "bin/developer.sh" "bin/tools/" "bin/developer.sh" "etc/docker/tools.sh"
+    muzzle reloadChanges --name "$(buildEnvironmentGet APPLICATION_NAME)" "$home/bin/developer.sh" "$home/bin/tools/" "$home/etc/docker/tools.sh"
     muzzle buildCompletion
 
     bashPrompt --skip-prompt bashPromptModule_TermColors
