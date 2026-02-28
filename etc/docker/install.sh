@@ -25,28 +25,28 @@ __installDevelopment() {
 # Incomplete but add extensions as needed
 __phpExtensionDependency() {
   case "$1" in
-    curl)
-      if php -i | grep -q "with-curl"; then
-        return 1
-      fi
-      printf -- "%s\n" "libcurl4"
-      ;;
-    gd)
-      printf -- "%s\n" "zlib1g-dev" "libpng-dev" "libjpeg-dev"
-      ;;
-    # Built-in
-    json | readline | ftp)
+  curl)
+    if php -i | grep -q "with-curl"; then
       return 1
-      ;;
-    intl)
-      printf -- "%s\n" "libicu-dev"
-      ;;
-    zip)
-      printf -- "%s\n" "libzip-dev"
-      ;;
-    mysqli)
-      printf -- "%s\n" "mariadb-client"
-      ;;
+    fi
+    printf -- "%s\n" "libcurl4"
+    ;;
+  gd)
+    printf -- "%s\n" "zlib1g-dev" "libpng-dev" "libjpeg-dev"
+    ;;
+  # Built-in
+  json | readline | ftp)
+    return 1
+    ;;
+  intl)
+    printf -- "%s\n" "libicu-dev"
+    ;;
+  zip)
+    printf -- "%s\n" "libzip-dev"
+    ;;
+  mysqli)
+    printf -- "%s\n" "mariadb-client"
+    ;;
   esac
 }
 
@@ -158,18 +158,18 @@ __mapFiles() {
     # __IDENTICAL__ __checkBlankArgumentHandler 1
     [ -n "$argument" ] || throwArgument "$handler" "blank #$__index/$__count ($(decorate each quote -- "${__saved[@]}"))" || return $?
     case "$argument" in
-      # _IDENTICAL_ helpHandler 1
-      --help) "$handler" 0 && return $? || return $? ;;
-      --keep)
-        shift
-        local keep
-        keep=$(validate "$handler" Directory "directory" "${1-}") || return $?
-        deleteArgs+=(! -path "${keep%/}")
-        ;;
-      *)
-        directory=$(validate "$handler" Directory "directory" "${1-}") || return $?
-        directories+=("$directory")
-        ;;
+    # _IDENTICAL_ helpHandler 1
+    --help) "$handler" 0 && return $? || return $? ;;
+    --keep)
+      shift
+      local keep
+      keep=$(validate "$handler" Directory "directory" "${1-}") || return $?
+      deleteArgs+=(! -path "${keep%/}")
+      ;;
+    *)
+      directory=$(validate "$handler" Directory "directory" "${1-}") || return $?
+      directories+=("$directory")
+      ;;
     esac
     # _IDENTICAL_ argument-esac-shift 1
     shift
@@ -231,11 +231,11 @@ __productionValues() {
 # Argument: databaseSchema - String. Required.
 __portFromScheme() {
   case "${1-}" in
-    mysql*) printf "%d\n" 3306 ;;
-    postgres*) printf "%d\n" 5432 ;;
-    *)
-      throwArgument "$handler" "Unknown database scheme: \"$1\"" || return $?
-      ;;
+  mysql*) printf "%d\n" 3306 ;;
+  postgres*) printf "%d\n" 5432 ;;
+  *)
+    throwArgument "$handler" "Unknown database scheme: \"$1\"" || return $?
+    ;;
   esac
 }
 
